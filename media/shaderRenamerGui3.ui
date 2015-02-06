@@ -9,7 +9,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>618</width>
+    <width>629</width>
     <height>584</height>
    </rect>
   </property>
@@ -64,6 +64,25 @@
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="refreshButton">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>45</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>Refresh</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="renameButton">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -90,7 +109,7 @@
      </layout>
     </item>
     <item row="1" column="0" rowspan="2">
-     <layout class="QGridLayout" name="top_GridLayout" columnstretch="0,0,0,0,0,0">
+     <layout class="QGridLayout" name="top_GridLayout" columnstretch="0,0,0,0,0">
       <item row="1" column="0">
        <widget class="QLineEdit" name="assetLineEdit">
         <property name="minimumSize">
@@ -107,7 +126,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="assetLabel">
         <property name="text">
-         <string>asset:</string>
+         <string>asset name:</string>
         </property>
        </widget>
       </item>
@@ -119,7 +138,7 @@
        </widget>
       </item>
       <item row="1" column="4">
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="setNameButton">
         <property name="styleSheet">
          <string notr="true">QPushButton{background-color: rgb(120, 90, 100);}</string>
         </property>
@@ -131,14 +150,14 @@
       <item row="0" column="2">
        <widget class="QLabel" name="variationLable">
         <property name="text">
-         <string>variation:</string>
+         <string>lookdev variation:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QLabel" name="shaderNameLabel">
         <property name="text">
-         <string>shader name:</string>
+         <string>shader string:</string>
         </property>
        </widget>
       </item>

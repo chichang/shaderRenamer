@@ -1,36 +1,26 @@
 #!/usr/bin/python2.6
-
 import os
 env = Environment()
 
-initFiles = [
-    '__init__.py',
-	'shaderRenamerGui.py',
+
+package_files = [
+    'shaderRenamerGui.py',
     'shaderRenamerMaya.py',
     ]
 
+supported_maya_versions = ['2014', '2015']
+
+
+destMayaReleases = []
+
+
+for mayaver in supported_maya_versions:
+    destMayaReleases.append("/X/tools/maya/python/%s-x64" % mayaver)
+
+
 # standard install
-destInitReleases	= []
-
-# debug install
-testLibReleases     = []
-
-#for pyver in ['2.6', '2.7']:
-#    destLibReleases.append("/X/tools/python/mrx/pythonlib%s/XAssets" % pyver)
-destInitReleases.append("/X/tools/python/users/python2.7/chichang/shaderRenamer")
-
-# standard install
-env.Install(destInitReleases, initFiles)
-
-# debug install
-#env.Install(testLibReleases, libFiles)
-#env.Alias("install-release", [destLibReleases, destUtilReleases])
-env.Alias("install-release", [destInitReleases])
-#env.Alias("install-debug", [testLibReleases])
+env.Install(destMayaReleases, package_files)
 
 
-
-
-
-
-
+# release install
+env.Alias("install-release", [destMayaReleases,])
