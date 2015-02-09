@@ -20,6 +20,15 @@ def maya_main_window():
 	ptr = OpenMayaUI.MQtUtil.mainWindow()
 	if ptr is not None:
 		return shiboken.wrapInstance(long(ptr), QtGui.QWidget)
+	else:
+		print "now window found."
+
+
+class MouseEventFilter(QtCore.QObject):
+    def eventFilter(self, obj, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            return True
+        return False
 
 
 class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
@@ -28,6 +37,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#init
 		super(ShaderRenamerWindow, self).__init__(parent)
 		self.setupUi(self)
+		self.setWindowTitle("Shader Renamer")
 		print "setting up ui..."
 
 		DEFAULT_ASSET_STRING = "Asset"
@@ -74,7 +84,10 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.VARIATION = variationName
 
 
-		#Disable for now
+
+		#rx = QtCore.QRegExp("-?\\d{1,3}")
+		#validator = QtGui.QRegExpValidator(rx, self)
+		#self.shaderNameLineEdit.setValidator(validator)
 
 		activePallet = QtGui.QPalette()
 		activePallet.setColor(QtGui.QPalette.Background, QtCore.Qt.gray)
@@ -109,7 +122,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.shadersListView.clicked[QtCore.QModelIndex].connect(self.itemClicked)
 		self.geoAssignedListWidget.clicked.connect(self.selectGeo)
 		self.model.dataChanged.connect(self.nameChanged)
-
 
 		#init the shader list
 		self.refresh()
@@ -505,3 +517,22 @@ def validShaderName(assetName, variationName, shaderName):
         print "invalid shader name!! :  " + shaderName
         return False
 
+def main(debug=False):
+	#launch shader renamer
+    global win
+    try:
+        win.close()
+    except:
+        pass
+    win = ShaderRenamerWindow()
+    win.show()
+    return
+
+if __name__ == "__main__":
+	pass
+	# import sys
+	# sys.path.insert(0,"/USERS/chichang/workspace/shaderRenamer")
+	# import shaderRenamerMaya
+	# reload(shaderRenamerMaya)
+	# shadrenamer = shaderRenamerMaya.ShaderRenamerWindow()
+	# shadrenamer.show()
