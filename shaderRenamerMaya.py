@@ -90,12 +90,13 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#self.shaderNameLineEdit.setValidator(validator)
 
 		activePallet = QtGui.QPalette()
-		activePallet.setColor(QtGui.QPalette.Background, QtCore.Qt.gray)
 		activePallet.setColor(QtGui.QPalette.Text, QtCore.Qt.lightGray)
+		#activePallet.setColor(QtGui.QPalette.Background, QtCore.Qt.darkGray)
+		activePallet.setColor(QtGui.QPalette.Background, QtCore.Qt.darkGray)
+
 
 		disablePallet = QtGui.QPalette()
 		disablePallet.setColor(QtGui.QPalette.Text, QtCore.Qt.gray)
-		activePallet.setColor(QtGui.QPalette.Background, QtCore.Qt.darkGray)
 
 		self.assetLineEdit.setPalette(disablePallet)
 		self.variationLineEdit.setPalette(disablePallet)
@@ -116,6 +117,11 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.refreshButton.clicked.connect(self.refresh)
 
 		self.assetLineEdit.textEdited.connect(self.assetNameChanged)
+		self.assetLineEdit.editingFinished.connect(self.assetNameFinished)
+		
+
+
+
 		self.variationLineEdit.textChanged.connect(self.variationChanged)
 
 		self.shaderNameLineEdit.returnPressed.connect(self.setSelectedNames)
@@ -136,6 +142,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			item.validateName(self.assetLineEdit.text(), self.variationLineEdit.text())
 
 			self.model.setItem(row, 0, item)
+
 			#model.clicked[row].connect(self.clicked)
 			row += 1
 
@@ -178,13 +185,27 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			print "node type rigCenterNode not exist"
 			return None
 
+	def assetNameFinished(self):
+		print "asset name edit done."
+		#set text color back to valid
+		cleanEntries = self.getCleanEntry()
+		for i in cleanEntries:
+			i.setTextColor("valid")
+
 
 	def assetNameChanged(self):
 		#asset name changed
 		#update all clean entries with new asset name
 		newAssetName = self.assetLineEdit.text()
 		cleanEntries = self.getCleanEntry()
+
+		if newAssetName == "":
+			print "no asset name found"
+			return
+
 		for i in cleanEntries:
+			#set color to editing
+			i.setTextColor("editing")
 			shaderName = i.text()
 			self.updateAssetString(i, self.ASSET, newAssetName)
 		#set new asset name to current asset name
@@ -192,6 +213,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.validateAllShaders()
 
 	def updateAssetString(self, item, oldAssetName, newAssetName):
+		#set update asset name on item
 		oldShaderName = item.text()
 		newShaderName = oldShaderName.replace(oldAssetName, newAssetName)
 		print newShaderName
@@ -203,6 +225,11 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#update all clean entries with new asset name
 		newVariation = self.variationLineEdit.text()
 		cleanEntries = self.getCleanEntry()
+
+		if newVariation == "":
+			print "no variation name found"
+			return
+
 		for i in cleanEntries:
 			shaderName = i.text()
 			self.updateVariationString(i, self.VARIATION, newVariation)
@@ -425,12 +452,21 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 	def selectGeo(self,index):
 		#select geo in maya scene
-		row = index.row()
-		shape = self.geoAssignedListWidget.item(row).text()
-		transform = mc.listRelatives(shape, p=True, type="transform")
 		mc.select(clear=True)
-		mc.select(transform)
+		selectedItems = self.getAllSelectedGeo()
+		for i in selectedItems:
+			#row = index.row()
+			#shape = self.geoAssignedListWidget.item(row).text()
+			shape = i.text()
+			transform = mc.listRelatives(shape, p=True, type="transform")
 
+			mc.select(transform, add=True)
+
+
+	def getAllSelectedGeo(self):
+		#returns all selected geo in the geo list.
+		selectedItems = self.geoAssignedListWidget.selectedItems()
+		return selectedItems
 
 
 class ShaderItem(QtGui.QStandardItem):
@@ -454,10 +490,13 @@ class ShaderItem(QtGui.QStandardItem):
 			print "good shader name"
 			self.setIcon(self.DEFAULT_ICON)
 			self.clean = True
+			self.setTextColor("valid")
+
 		else:
 			print "bad shader name"
 			self.setIcon(self.WARNING_ICON)
 			self.clean = False
+
 
 	def nameClash(self):
 		#name clash
@@ -466,7 +505,24 @@ class ShaderItem(QtGui.QStandardItem):
 		print self.clean
 		self.setIcon(self.WARNING_ICON)
 
+	def setTextColor(self, color="default"):
+		#set text color
+		if color == "default":
+			#self.setData(9,0)
+			pass
 
+		elif color == "valid":
+			pass
+			#self.setData(QtGui.QColor("#3d8a3d"),QtCore.Qt.TextColorRole)
+			#self.setData(QtGui.QColor("#cae3c3"),QtCore.Qt.TextColorRole)
+
+		elif color == "editing":
+			#self.setData(QtGui.QColor("#bde8b1"),QtCore.Qt.TextColorRole)
+			pass
+
+		# elif color == "warning":
+		#self.setData(QtGui.QColor("#FF333D"),QtCore.Qt.TextColorRole)
+		#self.setData(QtGui.QColor("#FF333D"),QtCore.Qt.BackgroundColorRole)
 
 class ShadersItemModel(QtGui.QStandardItemModel):
 	def __init__(self):
