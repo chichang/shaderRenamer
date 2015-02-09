@@ -1,0 +1,2 @@
+# shaderRenamer
+maya shader renamer
