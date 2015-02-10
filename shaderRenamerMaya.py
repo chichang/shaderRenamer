@@ -6,6 +6,12 @@ http://srinikom.github.io/pyside-docs/PySide/QtGui/QListView.html
 http://www.pythoncentral.io/pyside-pyqt-tutorial-qlistview-and-qstandarditemmodel/
 '''
 
+'''
+TODO:
+current default mode is lookdev. which assumes current scene only have one asset.
+adding in lighting mode which just do general naming convention checking and operates
+naming and asset string checking on only selected
+'''
 import sys
 import os
 import re
@@ -15,13 +21,17 @@ import maya.OpenMayaUI as OpenMayaUI
 import shiboken
 from shaderRenamerGui import Ui_shaderRenamerGUI
 
+#simple logger
+logger = logging.getLogger('shaderRenamer')
+logger.setLevel(logging.DEBUG)
+
 def maya_main_window():
 	#Get the maya main window as a QMainWindow instance
 	ptr = OpenMayaUI.MQtUtil.mainWindow()
 	if ptr is not None:
 		return shiboken.wrapInstance(long(ptr), QtGui.QWidget)
 	else:
-		print "now window found."
+		logger.warning("now window found.")
 
 
 class MouseEventFilter(QtCore.QObject):
@@ -38,9 +48,9 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		super(ShaderRenamerWindow, self).__init__(parent)
 		self.setupUi(self)
 		self.setWindowTitle("Shader Renamer")
-		print "setting up ui..."
+		logger.info("setting up ui...")
 
-		DEFAULT_ASSET_STRING = "Asset"
+		DEFAULT_ASSET_STRING = "asset"
 		DEFAULT_VARIATION_STRING = "A"
 		self.INFO_CLEAN = ""
 		#self.INFO_DIRTY = "Please rename shader: (ASSET)_(shader)_(variation)_shad"
@@ -67,9 +77,14 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			#use the shot name
 			try:
 				shot = os.getenv("SHOT")
-				assetName = shot
+				if shot:
+					assetName = shot
+				else:
+					logger.warning("can not get shot. use default name")
+					assetName = DEFAULT_ASSET_STRING
+
 			except:
-				print "error getting shot. use default name"
+				logger.error("error getting shot. use default name")
 				assetName = DEFAULT_ASSET_STRING
 
 
@@ -149,7 +164,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 	def getAllShaders(self):
 		#returns all shaders in the scene. that's connected to a shading group.
-		print "getting all shaders in the scene."
+		logger.info("getting all shaders in the scene.")
 		shadingGroups = mc.ls(type="shadingEngine")
 
 		#get shaders and coresponding shading groups
@@ -164,15 +179,15 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 				connectedShader = connectedShader.split(".")[0]
 
 				if connectedShader == "":
-					print "no shader connected to : " + sg
+					#print "no shader connected to : " + sg
 					continue
 
-				print "connectedShader: ", connectedShader
+				#print "connectedShader: ", connectedShader
 
 				allShaders[connectedShader] = sg
 				allMeshConnections[connectedShader] = mc.listConnections(sg, s=True, sh=True, type="mesh")
 
-		print allShaders, allMeshConnections
+		#print allShaders, allMeshConnections
 		return allShaders, allMeshConnections
 
 
@@ -182,11 +197,11 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			rcnulls = mc.ls(type="rigCenterNode")
 			return rcnulls
 		except:
-			print "node type rigCenterNode not exist"
+			#print "node type rigCenterNode not exist"
 			return None
 
 	def assetNameFinished(self):
-		print "asset name edit done."
+		#print "asset name edit done."
 		#set text color back to valid
 		cleanEntries = self.getCleanEntry()
 		for i in cleanEntries:
@@ -200,7 +215,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		cleanEntries = self.getCleanEntry()
 
 		if newAssetName == "":
-			print "no asset name found"
+			#print "no asset name found"
 			return
 
 		for i in cleanEntries:
@@ -216,7 +231,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#set update asset name on item
 		oldShaderName = item.text()
 		newShaderName = oldShaderName.replace(oldAssetName, newAssetName)
-		print newShaderName
+		logger.debug("new shader name: " + newShaderName)
 		item.setText(newShaderName)
 		#update asset string
 
@@ -227,7 +242,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		cleanEntries = self.getCleanEntry()
 
 		if newVariation == "":
-			print "no variation name found"
+			#print "no variation name found"
 			return
 
 		for i in cleanEntries:
@@ -244,9 +259,9 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 		nameList.pop(self.VARIATION_STR_INDEX)
 		nameList.insert(self.VARIATION_STR_INDEX+1, newVariation)
-		print nameList
+		#print nameList
 		newShaderName = "_".join(nameList)
-		print newShaderName
+		logger.debug("new shader name: " + newShaderName)
 		item.setText(newShaderName)
 		#update asset string
 
@@ -257,7 +272,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		numShaders = self.model.rowCount()
 		for i in range(0, numShaders):
 			item = self.model.item(i)
-			print item.clean
+			logger.debug(item.text() + " is clean: " + str(item.clean))
 			if item.clean:
 				cleanEntries.append(item)
 		return cleanEntries
@@ -277,7 +292,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 	def rename(self):
 		#do the rename.
-		print "rename shaders."
+		logger.info("renaming shaders.")
 		numShaders = self.model.rowCount()
 		for i in range(0, numShaders):
 			item = self.model.item(i)
@@ -290,7 +305,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 			if originalShaderName != newShaderName:
 				#rename shader
-				print originalShaderName + " => " + newShaderName
+				logger.debug(originalShaderName + " => " + newShaderName)
 				mc.rename(originalShaderName, newShaderName)
 
 			else:
@@ -310,8 +325,8 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#rename the shading group to match shader
 		if oldName != newName:
 			mc.rename(oldName, newName)
-			print "renaming shading group:"
-			print oldName + " => " + newName
+			logger.debug("renaming shading group.")
+			logger.info(oldName + " => " + newName)
 
 
 	#def nameChanged(self, item):
@@ -329,7 +344,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 	def setSelectedNames(self):
 		#set the name for selected
-		print "set name for selected shaders."
+		logger.info("set name for selected shaders.")
 		selectedIndexes = self.shadersListView.selectedIndexes()
 		for i in selectedIndexes:
 			self.currentIndex = i
@@ -337,7 +352,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 
 	def setName(self, selectedIndex):
-		print "set name for shader"
+		logger.info("set name for shader")
 		#selectedIndex = self.shadersListView.selectedIndexes()[0].row()
 		selectedItem = self.model.item(selectedIndex.row())
 		if self.buildShaderName():
@@ -388,14 +403,20 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		assetName = self.assetLineEdit.text()
 		print assetName
 		if assetName == "":
+			self.infoLabel.setText("no asset name found.")
 			return False
+
 		shaderName = self.shaderNameLineEdit.text()
 		print shaderName
 		if shaderName == "":
+			self.infoLabel.setText("no shader string found.")
 			return False
+
 		variationName = self.variationLineEdit.text()
 		if variationName == "":
+			self.infoLabel.setText("no variation name found.")
 			return False
+
 		subfix = self.subfixLabel.text()
 
 		self.shaderNameToSet = "_".join([assetName, shaderName, variationName])+subfix
