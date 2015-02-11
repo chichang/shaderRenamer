@@ -141,7 +141,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.refreshButton.clicked.connect(self.refresh)
 
 		self.assetLineEdit.textEdited.connect(self.assetNameChanged)
-		self.assetLineEdit.editingFinished.connect(self.assetNameFinished)
+		#self.assetLineEdit.editingFinished.connect(self.assetNameFinished)
 
 
 
@@ -245,12 +245,12 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			#print "node type rigCenterNode not exist"
 			return None
 
-	def assetNameFinished(self):
-		#print "asset name edit done."
-		#set text color back to valid
-		cleanEntries = self.getCleanEntry()
-		for i in cleanEntries:
-			i.setTextColor("valid")
+	# def assetNameFinished(self):
+	# 	#print "asset name edit done."
+	# 	#set text color back to valid
+	# 	cleanEntries = self.getCleanEntry()
+	# 	for i in cleanEntries:
+	# 		i.setTextColor("valid")
 
 
 	def assetNameChanged(self):
@@ -266,7 +266,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 		for i in cleanEntries:
 			#set color to editing
-			i.setTextColor("editing")
+			#i.setTextColor("editing")
 			shaderName = i.text()
 			self.updateAssetString(i, self.ASSET, newAssetName)
 		#set new asset name to current asset name
@@ -285,9 +285,17 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 	def getCleanEntry(self):
 		#retruns a list of clean entries
 		cleanEntries = []
+		#clean shader model view item
 		numShaders = self.shaderModel.rowCount()
 		for i in range(0, numShaders):
 			item = self.shaderModel.item(i)
+			logger.debug(item.text() + " is clean: " + str(item.clean))
+			if item.clean:
+				cleanEntries.append(item)
+		#clean dependency model view item
+		numNodes = self.dependencyModel.rowCount()
+		for i in range(0, numNodes):
+			item = self.dependencyModel.item(i)
 			logger.debug(item.text() + " is clean: " + str(item.clean))
 			if item.clean:
 				cleanEntries.append(item)
@@ -579,7 +587,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 	def rename(self):
 		#do the rename.
-		logger.info("renaming shaders.")
+		logger.info("start renaming shaders.")
 		numShaders = self.shaderModel.rowCount()
 		for i in range(0, numShaders):
 			item = self.shaderModel.item(i)
@@ -594,13 +602,27 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 				#rename shader
 				logger.debug(originalShaderName + " => " + newShaderName)
 				mc.rename(originalShaderName, newShaderName)
-
 			else:
 				newShaderName = originalShaderName
 
-
 			#rename the shading group
 			self.renameShadingGroup(originalSGName, newSGName)
+
+		logger.info("start renaming dependency nodes.")
+		numNodes = self.dependencyModel.rowCount()
+		for i in range(0, numNodes):
+			item = self.dependencyModel.item(i)
+			originalNodeName = item.oldName
+			newNodeName = item.text()
+			if originalNodeName != newNodeName:
+				#rename shader
+				logger.debug(originalNodeName + " => " + newNodeName)
+				mc.rename(originalNodeName, newNodeName)
+			else:
+				newNodeName = originalNodeName
+
+
+
 
 		#done
 		mc.warning("rename shaders succesful.")
@@ -629,20 +651,13 @@ class ShaderItem(QtGui.QStandardItem):
 			print "good shader name"
 			self.setIcon(self.DEFAULT_ICON)
 			self.clean = True
-			self.setTextColor("valid")
+			#self.setTextColor("valid")
 
 		else:
 			print "bad shader name"
 			self.setIcon(self.WARNING_ICON)
 			self.clean = False
 
-
-	def nameClash(self):
-		#name clash
-		print "name clash!!"
-		self.clean = False
-		print self.clean
-		self.setIcon(self.WARNING_ICON)
 
 	def setTextColor(self, color="default"):
 		#set text color
@@ -696,7 +711,7 @@ class DependencyItem(QtGui.QStandardItem):
 			self.clean = False
 
 	def setBackgroundColor(self):
-		#TODO: define the colors some where
+		#TODO: define the colors some where else
 		#set background color :)
 		if self.nodeType in mayaNodesDict["shader"]:
 			color = "#383838"
