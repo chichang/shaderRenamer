@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>894</width>
-    <height>682</height>
+    <width>705</width>
+    <height>801</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -97,7 +97,7 @@
            <string notr="true">QPushButton{background-color: rgb(90, 60, 100);}</string>
           </property>
           <property name="text">
-           <string>Rename Shaders</string>
+           <string>Rename</string>
           </property>
          </widget>
         </item>
@@ -151,6 +151,38 @@
         </property>
        </widget>
       </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="setNameButton">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background-color: rgb(60, 30, 50);}</string>
+        </property>
+        <property name="text">
+         <string>Set Shader Name</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QPushButton" name="setNodeNameButton">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton{background-color: rgb(60, 50, 70);}</string>
+        </property>
+        <property name="text">
+         <string>Set Node Name</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </item>
     <item row="1" column="0" rowspan="2">
@@ -171,38 +203,21 @@
       <item row="0" column="0">
        <widget class="QLabel" name="assetLabel">
         <property name="text">
-         <string>asset name:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="4">
-       <widget class="QLabel" name="subfixLabel">
-        <property name="text">
-         <string>_shad</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="5">
-       <widget class="QPushButton" name="setNameButton">
-        <property name="styleSheet">
-         <string notr="true">QPushButton{background-color: rgb(120, 90, 100);}</string>
-        </property>
-        <property name="text">
-         <string>Set Name</string>
+         <string>asset  name:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="3">
        <widget class="QLabel" name="variationLable">
         <property name="text">
-         <string>lookdev variation:</string>
+         <string>lookdev  variation:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QLabel" name="shaderNameLabel">
         <property name="text">
-         <string>shader string:</string>
+         <string>shader/node  string:</string>
         </property>
        </widget>
       </item>
@@ -229,6 +244,13 @@
           <width>0</width>
           <height>30</height>
          </size>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="4">
+       <widget class="QLabel" name="subfixLabel">
+        <property name="text">
+         <string>_shad</string>
         </property>
        </widget>
       </item>
