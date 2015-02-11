@@ -177,7 +177,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		row = 0
 		#load the shaders into list view
 		filteredChildList = self.filterAllDependencies()
-		print "filtered childs to add: ", filteredChildList
+		#print "filtered childs to add: ", filteredChildList
 		for node in filteredChildList:
 
 			#ignore nodes
@@ -226,7 +226,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 					connectedShader = connectedShader.split(".")[0]
 
 					if connectedShader == "":
-						print "no shader connected to : " + sg
+						#print "no shader connected to : " + sg
 						continue
 
 					#print "connectedShader: ", connectedShader
@@ -438,10 +438,10 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			#check if there are shaders named the same
 			for i in range(0, numShaders):
 				#item = self.shaderModel.item(i)
-				print "checking " + self.shaderNameToSet
-				print "against: " + self.shaderModel.item(i).text()
+				#print "checking " + self.shaderNameToSet
+				#print "against: " + self.shaderModel.item(i).text()
 				if self.shaderNameToSet == self.shaderModel.item(i).text():
-					print "name clash!!"
+					#print "name clash!!"
 					self.shaderNamePlusPlus(self.shaderNameLineEdit.text(), view)
 					return
 			#set the name
@@ -452,17 +452,17 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#selectedIndex = self.shadersListView.selectedIndexes()[0].row()
 		selectedItem = self.dependencyModel.item(selectedIndex.row())
 		nodeType = selectedItem.nodeType
-		print "nodeType: ", nodeType
+		#print "nodeType: ", nodeType
 		if self.buildItemName(selectedItem, subfix=nodeType):
-			print self.shaderNameToSet
+			#print self.shaderNameToSet
 			numShaders = self.dependencyModel.rowCount()
 			#check if there are shaders named the same
 			for i in range(0, numShaders):
 				#item = self.shaderModel.item(i)
-				print "checking " + self.shaderNameToSet
-				print "against: " + self.dependencyModel.item(i).text()
+				#print "checking " + self.shaderNameToSet
+				#print "against: " + self.dependencyModel.item(i).text()
 				if self.shaderNameToSet == self.dependencyModel.item(i).text():
-					print "name clash!!"
+					#print "name clash!!"
 					self.shaderNamePlusPlus(self.shaderNameLineEdit.text(), view)
 					return
 			#set the name
@@ -477,12 +477,12 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		m = rg.search(name)
 		if m:
 			num=m.group(1)
-			print "("+num+")"+"\n"
+			#print "("+num+")"+"\n"
 			newName = name.replace(str(num), "")
 			newNum = int(num)+1
-			print newName, newNum
+			#print newName, newNum
 			newName = newName + str(newNum)#.zfill(2)
-			print "set shader name to :" + newName
+			#print "set shader name to :" + newName
 			self.shaderNameLineEdit.setText(newName)
 			if view == "shaderView":
 				self.setName(self.currentIndex, view)
@@ -500,13 +500,13 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 	def buildItemName(self, item, subfix="shad"):
 		#return the full name to set for the shader and nodes item based on current settings.
 		assetString = self.assetLineEdit.text()
-		print assetString
+		#print assetString
 		if assetString == "":
 			self.statusBar.showMessage("no asset name found.")
 			return False
 
 		nodeString = self.shaderNameLineEdit.text()
-		print nodeString
+		#print nodeString
 		if nodeString == "":
 			self.statusBar.showMessage("no shader string found.")
 			return False
@@ -570,12 +570,12 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 	def parseShaderName(self, name):
 		#before comming up with a betterway to track shader strings
 		#try the best to parse out the shader string in the full shader name.
-		#TODO:
+		#TODO: Kill subfixLabel
 		import unicodedata
 		nameList = name.split("_")
 
 		if nameList[-1] == self.subfixLabel.text()[1:]:
-			print self.subfixLabel.text()[1:]
+			#print self.subfixLabel.text()[1:]
 			nameList.pop()
 			nameList.pop()
 
@@ -680,25 +680,25 @@ class ShaderItem(QtGui.QStandardItem):
 		self.setIcon(self.WARNING_ICON)
 
 	def validateName(self, asset, variation):
-		print "validating shader name ..."
+		#print "validating shader name ..."
 
 		if validShaderName(asset, variation, self.text()):
-			print "good shader name"
+			#print "good shader name"
 			self.setIcon(self.DEFAULT_ICON)
 			self.clean = True
 			#self.setTextColor("valid")
 
 		else:
-			print "bad shader name"
+			#print "bad shader name"
 			self.setIcon(self.WARNING_ICON)
 			self.clean = False
 
 
 	def nameClash(self):
 		#name clash
-		print "name clash!!"
+		#print "name clash!!"
 		self.clean = False
-		print self.clean
+		#print self.clean
 		self.setIcon(self.WARNING_ICON)
 
 	def setTextColor(self, color="default"):
@@ -746,15 +746,15 @@ class DependencieItem(QtGui.QStandardItem):
 
 
 	def validateName(self, asset, variation):
-		print "validating shader name ..."
+		#print "validating shader name ..."
 
 		if validShaderName(asset, variation, self.text()):
-			print "good node name"
+			#print "good node name"
 			self.setIcon(self.DEFAULT_ICON)
 			self.clean = True
 			#self.setTextColor("valid")
 		else:
-			print "bad node name"
+			#print "bad node name"
 			self.setIcon(self.WARNING_ICON)
 			self.clean = False
 
@@ -794,60 +794,58 @@ class DependenciesItemModel(QtGui.QStandardItemModel):
 
 def validShaderName(assetName, variationName, shaderName):
 	#TODO: pass node type into reg7.
-    print "checking shader name: "+ shaderName
+	#print "checking shader name: "+ shaderName
 
-    re1='('+assetName+')'   # Word 1
-    re2='(_)'   # Any Single Character 1
-    re3='.*?'   # Non-greedy match on filler
-    re4='(_)'   # Any Single Character 2
-    re5='('+variationName+')' # Word 2
-    re6='(_)'   # Any Single Character 3
-    re7='.*?'	# Word 3
-    re8='($)'
-    
-    rg1 = re.compile(re1+re2+re3+re4+re5+re6+re7+re8,re.IGNORECASE|re.DOTALL)
-    m1 = rg1.search(shaderName)
+	re1='('+assetName+')'   # Word 1
+	re2='(_)'   # Any Single Character 1
+	re3='.*?'   # Non-greedy match on filler
+	re4='(_)'   # Any Single Character 2
+	re5='('+variationName+')' # Word 2
+	re6='(_)'   # Any Single Character 3
+	re7='.*?'	# Word 3
+	re8='($)'
 
-    re1='('+assetName+')'   # Word 1
-    re2='(_)'   # Any Single Character 1
-    re3='.*?'   # Non-greedy match on filler
-    re4='(_)'   # Any Single Character 2
-    re5='('+variationName+')' # Word 2
-    re6='(_)'   # Any Single Character 3
-    #re7='((?:[a-z][a-z]+))'	# Word 3
-    re7='.*?'	# Word 3
-    re8='($)'
+	rg1 = re.compile(re1+re2+re3+re4+re5+re6+re7+re8,re.IGNORECASE|re.DOTALL)
+	m1 = rg1.search(shaderName)
 
-    rg2 = re.compile(re1+re2+re3+re4+re5+re6+re7+re8,re.IGNORECASE|re.DOTALL)
-    m2 = rg2.search(shaderName)
+	re1='('+assetName+')'   # Word 1
+	re2='(_)'   # Any Single Character 1
+	re3='.*?'   # Non-greedy match on filler
+	re4='(_)'   # Any Single Character 2
+	re5='('+variationName+')' # Word 2
+	re6='(_)'   # Any Single Character 3
+	#re7='((?:[a-z][a-z]+))'	# Word 3
+	re7='.*?'	# Word 3
+	re8='($)'
 
-    print m1, m2
+	rg2 = re.compile(re1+re2+re3+re4+re5+re6+re7+re8,re.IGNORECASE|re.DOTALL)
+	m2 = rg2.search(shaderName)
 
-    if m1 or m2:
-        word1=m2.group(1)
-        c1=m2.group(2)
-        c2=m2.group(3)
-        word2=m2.group(4)
-        c3=m2.group(5)
-        word3=m2.group(6)
-        return True
-    else:
-        print "invalid shader name!! :  " + shaderName
-        return False
+	#print m1, m2
 
-
+	if m1 or m2:
+		word1=m2.group(1)
+		c1=m2.group(2)
+		c2=m2.group(3)
+		word2=m2.group(4)
+		c3=m2.group(5)
+		word3=m2.group(6)
+		return True
+	else:
+		#print "invalid shader name!! :  " + shaderName
+		return False
 
 
 def main(debug=False):
 	#launch shader renamer
-    global win
-    try:
-        win.close()
-    except:
-        pass
-    win = ShaderRenamerWindow()
-    win.show()
-    return
+	global win
+	try:
+		win.close()
+	except:
+		pass
+	win = ShaderRenamerWindow()
+	win.show()
+	return
 
 if __name__ == "__main__":
 	pass
