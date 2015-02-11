@@ -1,6 +1,9 @@
 
 import maya.cmds as mc
-#ignoreNodes = ['defaultColorMgtGlobals']
+import logger
+reload(logger)
+
+logger = logger.getLogger()
 
 def getUpstreamNodes(root):
 	#pass in a node. returns all upstream nodes.
@@ -12,7 +15,7 @@ def getUpstreamNodes(root):
 	conectedNodes=[]
 
 	nextLevel = [root]
-	print "root shader for searching connections: ", root
+	logger.debug("root shader for searching connections: " + root)
 
 	#I am afraied of while loops... so lets set a max for now and break when done.
 	for l in range(0, MAX_SEARCH_LEVEL):
@@ -30,6 +33,7 @@ def getUpstreamNodes(root):
 				nextLevel.remove(i)
 			except ValueError:
 				pass
+
 			print "next level nodes: ", nextLevel
 
 			conectedNodes = mc.listConnections(i, sh=True, s=True, d=False)

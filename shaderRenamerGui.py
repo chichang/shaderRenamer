@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-                                     
 
-# Form implementation generated from reading ui file 'media/shaderRenamerGui6.ui'
+# Form implementation generated from reading ui file 'media/shaderRenamerGui7.ui'
 #                                                                                
-# Created: Wed Feb 11 12:02:16 2015                                              
+# Created: Wed Feb 11 13:00:51 2015                                              
 #      by: pyside-uic 0.2.15 running on PySide 1.2.1                             
 #                                                                                
 # WARNING! All changes made in this file will be lost!                           
@@ -100,8 +100,8 @@ class Ui_shaderRenamerGUI(object):
         sizePolicy.setHorizontalStretch(0)                                                            
         sizePolicy.setVerticalStretch(0)                                                              
         sizePolicy.setHeightForWidth(self.cancel_Button.sizePolicy().hasHeightForWidth())             
-        self.cancel_Button.setSizePolicy(sizePolicy)                                                  
-        self.cancel_Button.setMinimumSize(QtCore.QSize(0, 45))                                        
+        self.cancel_Button.setSizePolicy(sizePolicy)
+        self.cancel_Button.setMinimumSize(QtCore.QSize(0, 45))
         self.cancel_Button.setObjectName("cancel_Button")
         self.exportButton_HBoxLayout.addWidget(self.cancel_Button)
         self.refreshButton = QtGui.QPushButton(self.centralwidget)
@@ -125,13 +125,13 @@ class Ui_shaderRenamerGUI(object):
         self.exportButton_HBoxLayout.addWidget(self.renameButton)
         self.bottom_VBoxLayout.addLayout(self.exportButton_HBoxLayout)
         self.gridLayout_2.addLayout(self.bottom_VBoxLayout, 18, 0, 1, 1)
-        self.infoLabel = QtGui.QLabel(self.centralwidget)
-        self.infoLabel.setObjectName("infoLabel")
-        self.gridLayout_2.addWidget(self.infoLabel, 19, 0, 1, 1)
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.gridLayout_2.addLayout(self.horizontalLayout, 3, 0, 1, 1)
         shaderRenamerGUI.setCentralWidget(self.centralwidget)
+        self.statusBar = QtGui.QStatusBar(shaderRenamerGUI)
+        self.statusBar.setObjectName("statusBar")
+        shaderRenamerGUI.setStatusBar(self.statusBar)
 
         self.retranslateUi(shaderRenamerGUI)
         QtCore.QMetaObject.connectSlotsByName(shaderRenamerGUI)
@@ -150,4 +150,3 @@ class Ui_shaderRenamerGUI(object):
         self.cancel_Button.setText(QtGui.QApplication.translate("shaderRenamerGUI", "Cancel", None, QtGui.QApplication.UnicodeUTF8))
         self.refreshButton.setText(QtGui.QApplication.translate("shaderRenamerGUI", "Refresh", None, QtGui.QApplication.UnicodeUTF8))
         self.renameButton.setText(QtGui.QApplication.translate("shaderRenamerGUI", "Rename", None, QtGui.QApplication.UnicodeUTF8))
-        self.infoLabel.setText(QtGui.QApplication.translate("shaderRenamerGUI", "info", None, QtGui.QApplication.UnicodeUTF8))

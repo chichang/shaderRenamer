@@ -15,7 +15,7 @@ naming and asset string checking on only selected
 import sys
 import os
 import re
-import logging
+#import logging
 import maya.cmds as mc
 from functools import partial
 from PySide import QtCore, QtGui
@@ -23,12 +23,16 @@ import maya.OpenMayaUI as OpenMayaUI
 import shiboken
 from shaderRenamerGui import Ui_shaderRenamerGUI
 from globals import *
+import logger
+reload(logger)
 import utils
 reload(utils)
 
 #simple logger
-logger = logging.getLogger('shaderRenamer')
-logger.setLevel(logging.DEBUG)
+# logger = logging.getLogger('shaderRenamer')
+# logger.setLevel(logging.DEBUG)
+
+logger = logger.getLogger()
 
 def maya_main_window():
 	#Get the maya main window as a QMainWindow instance
@@ -84,7 +88,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#self.shadersListView.setStyleSheet("background-color: qlineargradient(x1: 0.5, y1: 0.5 x2: 0.5, y2: 1, stop: 0 #25262d, stop: 0.7 #242424 );")
 
 
-
 		#find asset if not use shot name
 		rcnulls = self.getAssetInScene()
 		if rcnulls:
@@ -104,6 +107,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			except:
 				logger.error("error getting shot. use default name")
 				assetName = DEFAULT_ASSET_STRING
+
 
 		#fill this in when adding variation support
 		variationName = DEFAULT_VARIATION_STRING
@@ -252,35 +256,51 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#for i in cleanEntries:
 			#i.setTextColor("valid")
 
+	def itemHasAssetString(self,item):
+		#return if asset name string data is initialized on the item.
+		if item.assetString:
+			return True
+		else:
+			return False
+
 
 	def assetNameChanged(self):
 		#asset name changed
 		#update all clean entries with new asset name
-		#TODO: find a better way to track asset name on item. istead of just replace the new str.
+		#TODO: 	this will only update the clean entries that name was set in the current session.
+		#		that it can found data on the object.
 		newAssetName = self.assetLineEdit.text()
 		cleanEntries = self.getCleanEntry()
+
 
 		if newAssetName == "":
 			#print "no asset name found"
 			return
 
 		for i in cleanEntries:
-			#set color to editing
-			#i.setTextColor("editing")
-			shaderName = i.text()
+			#shaderName = i.text()
 			self.updateAssetString(i, self.ASSET, newAssetName)
 		#set new asset name to current asset name
 		self.ASSET = newAssetName
 		self.validateAllShaders()
 
-
-
 	def updateAssetString(self, item, oldAssetName, newAssetName):
 		#set update asset name on item
 		oldShaderName = item.text()
-		newShaderName = oldShaderName.replace(oldAssetName, newAssetName)
+
+		#smart update. if found this item has name string data.
+		if self.itemHasAssetString(item):
+			newShaderName = "_".join([newAssetName, item.nodeString, item.variationString, item.subfixString])
+			item.assetString = newAssetName
+		else:
+			#TODO: fill this with a better function to parse out the asset name.
+			newShaderName = oldShaderName.replace(oldAssetName, newAssetName)
+
+
 		logger.debug("new shader name: " + newShaderName)
 		item.setText(newShaderName)
+
+
 		#update asset string
 
 	def variationChanged(self):
@@ -294,24 +314,32 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			return
 
 		for i in cleanEntries:
-			shaderName = i.text()
+			#shaderName = i.text()
 			self.updateVariationString(i, self.VARIATION, newVariation)
 
 		self.VARIATION = newVariation
 		self.validateAllShaders()
 
+
 	def updateVariationString(self, item, oldVariation, newVariation):
 		oldShaderName = item.text()
-		#ok, so the -2 element will be the variation.
-		nameList = oldShaderName.split("_")
 
-		nameList.pop(self.VARIATION_STR_INDEX)
-		nameList.insert(self.VARIATION_STR_INDEX+1, newVariation)
-		#print nameList
-		newShaderName = "_".join(nameList)
+		#smart update. if found this item has name string data.
+		if self.itemHasAssetString(item):
+			newShaderName = "_".join([item.assetString, item.nodeString, newVariation, item.subfixString])
+			item.variationString = newVariation
+		else:
+			#ok, so the -2 element will be the variation.
+			#TODO: fill this with a better function to parse out the asset name.
+			nameList = oldShaderName.split("_")
+			nameList.pop(self.VARIATION_STR_INDEX)
+			nameList.insert(self.VARIATION_STR_INDEX+1, newVariation)
+			#print nameList
+			newShaderName = "_".join(nameList)
+
 		logger.debug("new shader name: " + newShaderName)
 		item.setText(newShaderName)
-		#update asset string
+
 
 
 	def getCleanEntry(self):
@@ -357,17 +385,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.dependencyModel.blockSignals(False)
 		#refresh view
 		#self.shadersListView.refresh()
-
-
-	def renameShadingGroup(self, oldName, newName):
-		#rename the shading group to match shader
-		if oldName != newName:
-			mc.rename(oldName, newName)
-			logger.debug("renaming shading group.")
-			logger.info(oldName + " => " + newName)
-
-
-
 
 
 	def nameChanged(self, index):
@@ -485,18 +502,18 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		assetString = self.assetLineEdit.text()
 		print assetString
 		if assetString == "":
-			self.infoLabel.setText("no asset name found.")
+			self.statusBar.showMessage("no asset name found.")
 			return False
 
 		nodeString = self.shaderNameLineEdit.text()
 		print nodeString
 		if nodeString == "":
-			self.infoLabel.setText("no shader string found.")
+			self.statusBar.showMessage("no shader string found.")
 			return False
 
 		variationString = self.variationLineEdit.text()
 		if variationString == "":
-			self.infoLabel.setText("no variation name found.")
+			self.statusBar.showMessage("no variation name found.")
 			return False
 
 		#store the setting in the item
@@ -513,6 +530,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#item clicked in the shader view
 		if view == "shaderView":
 			item = self.shaderModel.itemFromIndex(index)
+			mc.select(item.oldName)
 			# print index.row()
 			# print self.shaderModel.itemData(index)
 			# print item.toolTip()
@@ -526,18 +544,19 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 		if view == "dependencyView":
 			item = self.dependencyModel.itemFromIndex(index)
+			mc.select(item.oldName)
 			# print index.row()
 			# print self.shaderModel.itemData(index)
 			# print item.toolTip()
 
 		#set info based on item state
 		if item.clean:
-			self.infoLabel.setText(self.INFO_CLEAN)
+			self.statusBar.showMessage(self.INFO_CLEAN)
 		else:
-			self.infoLabel.setText(self.INFO_DIRTY)
+			self.statusBar.showMessage(self.INFO_DIRTY)
 
 
-		#load name into shader name field
+		#load name into node string field
 		#if the item was set before use the seted data
 		if item.nodeString:
 			logger.debug("using node string on item.")
@@ -546,21 +565,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			logger.debug("parsing node string...")
 			newName = self.parseShaderName(item.text())
 		self.shaderNameLineEdit.setText(newName)
-
-
-
-	# def depenencyItemClicked(self, index):
-	# 	item = self.dependencyModel.itemFromIndex(index)
-	# 	print index.row()
-	# 	print self.dependencyModel.itemData(index)
-	# 	node = item.oldName
-	# 	mc.select(node)
-	# 	self.geoAssignedListWidget.clear()
-	# 	#set info based on item state
-	# 	if item.clean:
-	# 		self.infoLabel.setText(self.INFO_CLEAN)
-	# 	else:
-	# 		self.infoLabel.setText(self.INFO_DIRTY)
 
 
 	def parseShaderName(self, name):
@@ -594,7 +598,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			#shape = self.geoAssignedListWidget.item(row).text()
 			shape = i.text()
 			transform = mc.listRelatives(shape, p=True, type="transform")
-
 			mc.select(transform, add=True)
 
 
@@ -645,6 +648,15 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.refresh()
 
 
+	def renameShadingGroup(self, oldName, newName):
+		#rename the shading group to match shader
+		if oldName != newName:
+			mc.rename(oldName, newName)
+			logger.debug("renaming shading group.")
+			logger.info(oldName + " => " + newName)
+
+
+
 class ShaderItem(QtGui.QStandardItem):
 	def __init__(self, shaderName):
 		super(ShaderItem, self).__init__()
@@ -660,6 +672,7 @@ class ShaderItem(QtGui.QStandardItem):
 		self.assetString = None
 		self.nodeString = None
 		self.variationString = None
+		self.subfixString = "shad"
 
 		self.DEFAULT_ICON = QtGui.QIcon(os.getenv("MAYA_LOCATION")+"/icons/fpe_okPaths.png")
 		self.WARNING_ICON = QtGui.QIcon(os.getenv("MAYA_LOCATION")+"/icons/fpe_someBrokenPaths.png")
@@ -722,6 +735,7 @@ class DependencieItem(QtGui.QStandardItem):
 		self.assetString = None
 		self.nodeString = None
 		self.variationString = None
+		self.subfixString = self.nodeType
 
 		self.DEFAULT_ICON = QtGui.QIcon(os.getenv("MAYA_LOCATION")+"/icons/fpe_okPaths.png")
 		self.WARNING_ICON = QtGui.QIcon(os.getenv("MAYA_LOCATION")+"/icons/fpe_someBrokenPaths.png")
