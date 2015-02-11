@@ -66,14 +66,15 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.ASSET = ""
 		self.VARIATION = ""
 		self.VARIATION_STR_INDEX = -2
-
 		DEFAULT_VARIATION_STRING = "A"
-
 
 		#set models
 		self.shaderModel = ShadersItemModel()
+		self.shaderModel.setSortRole(QtCore.Qt.ToolTipRole)
 		self.shadersListView.setModel(self.shaderModel)
+		
 		self.dependencyModel = DependenciesItemModel()
+		self.dependencyModel.setSortRole(QtCore.Qt.ToolTipRole)
 		self.dependenciesListView.setModel(self.dependencyModel)
 
 		#selection mode
@@ -120,7 +121,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 		activePallet = QtGui.QPalette()
 		activePallet.setColor(QtGui.QPalette.Text, QtCore.Qt.lightGray)
-		#activePallet.setColor(QtGui.QPalette.Background, QtCore.Qt.darkGray)
 		activePallet.setColor(QtGui.QPalette.Background, QtCore.Qt.darkGray)
 
 		disablePallet = QtGui.QPalette()
@@ -129,8 +129,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.assetLineEdit.setPalette(disablePallet)
 		self.variationLineEdit.setPalette(disablePallet)
 		self.shaderNameLineEdit.setPalette(activePallet)
-		#self.assetLineEdit.setReadOnly(True)
-		#self.variationLineEdit.setReadOnly(True)
 
 
 		#signals.
@@ -139,9 +137,8 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.setNodeNameButton.clicked.connect(self.setSelectedNodeNames)
 		self.cancel_Button.clicked.connect(self.close)
 		self.refreshButton.clicked.connect(self.refresh)
-
 		self.assetLineEdit.textEdited.connect(self.assetNameChanged)
-		#self.assetLineEdit.editingFinished.connect(self.assetNameFinished)
+		self.assetLineEdit.editingFinished.connect(self.assetNameFinished)
 
 
 
@@ -169,6 +166,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			item = ShaderItem(shader)
 			item.validateName(self.assetLineEdit.text(), self.variationLineEdit.text())
 			self.shaderModel.setItem(row, 0, item)
+			#self.shaderModel.sort()
 			#model.clicked[row].connect(self.clicked)
 			row += 1
 
@@ -177,10 +175,16 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		filteredChildList = self.filterAllDependencies()
 		print "filtered childs to add: ", filteredChildList
 		for node in filteredChildList:
-			item = DependencyItem(node)
 
+			#ignore nodes
+			ignoreNodes = ['defaultColorMgtGlobals']
+			if node in ignoreNodes:
+				continue
+
+			item = DependencieItem(node)
 			item.validateName(self.assetLineEdit.text(), self.variationLineEdit.text())
 			self.dependencyModel.setItem(row, 0, item)
+			#self.dependencyModel.sort()
 			#model.clicked[row].connect(self.clicked)
 			row += 1
 
@@ -191,12 +195,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			nodesToAdd += self.shaderDependencies[shader]
 		#blast same nodes
 		nodesToAdd = list(set(nodesToAdd))
-		ignoreNodes = ['defaultColorMgtGlobals']
-		for i in ignoreNodes:
-			try:
-				nodesToAdd.remove(i)
-			except:
-				pass
 		return nodesToAdd
 
 
@@ -204,6 +202,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 	def getAllShaders(self):
 		#returns all shaders in the scene. that's connected to a shading group.
 		ignoreSg = ['initialParticleSE', 'initialShadingGroup']
+		readonlySg = mc.ls(readOnly=True)
 
 		shadingGroups = mc.ls(type="shadingEngine")
 		#stores shaders and coresponding shading groups
@@ -215,21 +214,22 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 		logger.info("getting all shaders in the scene.")
 		for sg in shadingGroups:
-			if sg not in ignoreSg:
-				#TODO: add in displacement, volume and other renderer specific inputs
-				#for now just get the surface shader
-				connectedShader = mc.connectionInfo(sg+".surfaceShader", sfd=True)
-				connectedShader = connectedShader.split(".")[0]
+			if sg not in readonlySg:
+				if sg not in ignoreSg:
+					#TODO: add in displacement, volume and other renderer specific inputs
+					#for now just get the surface shader
+					connectedShader = mc.connectionInfo(sg+".surfaceShader", sfd=True)
+					connectedShader = connectedShader.split(".")[0]
 
-				if connectedShader == "":
-					print "no shader connected to : " + sg
-					continue
+					if connectedShader == "":
+						print "no shader connected to : " + sg
+						continue
 
-				#print "connectedShader: ", connectedShader
-				logger.info("getting shaders geo connection and dependencies.")
-				allShaders[connectedShader] = sg
-				allMeshConnections[connectedShader] = mc.listConnections(sg, s=True, sh=True, type="mesh")
-				allDependencies[connectedShader] = utils.getUpstreamNodes(connectedShader)
+					#print "connectedShader: ", connectedShader
+					logger.info("getting shaders geo connection and dependencies.")
+					allShaders[connectedShader] = sg
+					allMeshConnections[connectedShader] = mc.listConnections(sg, s=True, sh=True, type="mesh")
+					allDependencies[connectedShader] = utils.getUpstreamNodes(connectedShader)
 
 		#print allShaders, allMeshConnections, allDependencies
 		return allShaders, allMeshConnections, allDependencies
@@ -245,12 +245,12 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			#print "node type rigCenterNode not exist"
 			return None
 
-	# def assetNameFinished(self):
-	# 	#print "asset name edit done."
-	# 	#set text color back to valid
-	# 	cleanEntries = self.getCleanEntry()
-	# 	for i in cleanEntries:
-	# 		i.setTextColor("valid")
+	def assetNameFinished(self):
+		#print "asset name edit done."
+		#set text color back to valid
+		cleanEntries = self.getCleanEntry()
+		#for i in cleanEntries:
+			#i.setTextColor("valid")
 
 
 	def assetNameChanged(self):
@@ -274,6 +274,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.validateAllShaders()
 
 
+
 	def updateAssetString(self, item, oldAssetName, newAssetName):
 		#set update asset name on item
 		oldShaderName = item.text()
@@ -281,27 +282,6 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		logger.debug("new shader name: " + newShaderName)
 		item.setText(newShaderName)
 		#update asset string
-
-	def getCleanEntry(self):
-		#retruns a list of clean entries
-		cleanEntries = []
-		#clean shader model view item
-		numShaders = self.shaderModel.rowCount()
-		for i in range(0, numShaders):
-			item = self.shaderModel.item(i)
-			logger.debug(item.text() + " is clean: " + str(item.clean))
-			if item.clean:
-				cleanEntries.append(item)
-		#clean dependency model view item
-		numNodes = self.dependencyModel.rowCount()
-		for i in range(0, numNodes):
-			item = self.dependencyModel.item(i)
-			logger.debug(item.text() + " is clean: " + str(item.clean))
-			if item.clean:
-				cleanEntries.append(item)
-
-		return cleanEntries
-
 
 	def variationChanged(self):
 		#variation changed
@@ -334,6 +314,29 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#update asset string
 
 
+	def getCleanEntry(self):
+		#retruns a list of clean entries
+		cleanEntries = []
+
+		#get clean entries from shader view
+		numShaders = self.shaderModel.rowCount()
+		for i in range(0, numShaders):
+			item = self.shaderModel.item(i)
+			logger.debug(item.text() + " is clean: " + str(item.clean))
+			if item.clean:
+				cleanEntries.append(item)
+
+		#get clean entries from dependency view
+		numShaders = self.dependencyModel.rowCount()
+		for i in range(0, numShaders):
+			item = self.dependencyModel.item(i)
+			logger.debug(item.text() + " is clean: " + str(item.clean))
+			if item.clean:
+				cleanEntries.append(item)
+
+		return cleanEntries
+
+
 	def validateAllShaders(self):
 		#validate all shader names based on current settings
 
@@ -362,6 +365,9 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			mc.rename(oldName, newName)
 			logger.debug("renaming shading group.")
 			logger.info(oldName + " => " + newName)
+
+
+
 
 
 	def nameChanged(self, index):
@@ -410,7 +416,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		logger.info("set name for shader")
 		#selectedIndex = self.shadersListView.selectedIndexes()[0].row()
 		selectedItem = self.shaderModel.item(selectedIndex.row())
-		if self.buildShaderName():
+		if self.buildItemName(selectedItem):
 			numShaders = self.shaderModel.rowCount()
 			#check if there are shaders named the same
 			for i in range(0, numShaders):
@@ -430,7 +436,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		selectedItem = self.dependencyModel.item(selectedIndex.row())
 		nodeType = selectedItem.nodeType
 		print "nodeType: ", nodeType
-		if self.buildShaderName(subfix=nodeType):
+		if self.buildItemName(selectedItem, subfix=nodeType):
 			print self.shaderNameToSet
 			numShaders = self.dependencyModel.rowCount()
 			#check if there are shaders named the same
@@ -474,27 +480,32 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 				self.setNodeName(self.currentIndex, view)
 
 
-	def buildShaderName(self, subfix="shad"):
-		#return the full shader name based on current settings.
-		assetName = self.assetLineEdit.text()
-		print assetName
-		if assetName == "":
+	def buildItemName(self, item, subfix="shad"):
+		#return the full name to set for the shader and nodes item based on current settings.
+		assetString = self.assetLineEdit.text()
+		print assetString
+		if assetString == "":
 			self.infoLabel.setText("no asset name found.")
 			return False
 
-		shaderName = self.shaderNameLineEdit.text()
-		print shaderName
-		if shaderName == "":
+		nodeString = self.shaderNameLineEdit.text()
+		print nodeString
+		if nodeString == "":
 			self.infoLabel.setText("no shader string found.")
 			return False
 
-		variationName = self.variationLineEdit.text()
-		if variationName == "":
+		variationString = self.variationLineEdit.text()
+		if variationString == "":
 			self.infoLabel.setText("no variation name found.")
 			return False
 
+		#store the setting in the item
+		item.assetString = assetString
+		item.nodeString = nodeString
+		item.variationString = variationString
+
 		#subfix = self.subfixLabel.text()
-		self.shaderNameToSet = "_".join([assetName, shaderName, variationName, subfix])
+		self.shaderNameToSet = "_".join([assetString, nodeString, variationString, subfix])
 		return True
 
 
@@ -502,8 +513,9 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#item clicked in the shader view
 		if view == "shaderView":
 			item = self.shaderModel.itemFromIndex(index)
-			print index.row()
-			print self.shaderModel.itemData(index)
+			# print index.row()
+			# print self.shaderModel.itemData(index)
+			# print item.toolTip()
 			shader = item.oldName
 
 			self.geoAssignedListWidget.clear()
@@ -514,8 +526,9 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 		if view == "dependencyView":
 			item = self.dependencyModel.itemFromIndex(index)
-			print index.row()
-			print self.shaderModel.itemData(index)
+			# print index.row()
+			# print self.shaderModel.itemData(index)
+			# print item.toolTip()
 
 		#set info based on item state
 		if item.clean:
@@ -525,7 +538,13 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 
 		#load name into shader name field
-		newName = self.parseShaderName(item.text())
+		#if the item was set before use the seted data
+		if item.nodeString:
+			logger.debug("using node string on item.")
+			newName = item.nodeString
+		else:
+			logger.debug("parsing node string...")
+			newName = self.parseShaderName(item.text())
 		self.shaderNameLineEdit.setText(newName)
 
 
@@ -567,7 +586,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 
 	def selectGeo(self,index):
-		#select geo in maya scene
+		#select geo in maya scene.
 		mc.select(clear=True)
 		selectedItems = self.getAllSelectedGeo()
 		for i in selectedItems:
@@ -580,18 +599,18 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 
 	def getAllSelectedGeo(self):
-		#returns all selected geo in the geo list.
+		#returns all hilighted geo in the geo list widget.
 		selectedItems = self.geoAssignedListWidget.selectedItems()
 		return selectedItems
 
 
 	def rename(self):
 		#do the rename.
-		logger.info("start renaming shaders.")
+
+		logger.info("renaming shaders.")
 		numShaders = self.shaderModel.rowCount()
 		for i in range(0, numShaders):
 			item = self.shaderModel.item(i)
-
 			originalShaderName = item.oldName
 			newShaderName = item.text()
 
@@ -602,13 +621,12 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 				#rename shader
 				logger.debug(originalShaderName + " => " + newShaderName)
 				mc.rename(originalShaderName, newShaderName)
-			else:
-				newShaderName = originalShaderName
 
 			#rename the shading group
 			self.renameShadingGroup(originalSGName, newSGName)
 
-		logger.info("start renaming dependency nodes.")
+
+		logger.info("renaming dependency nodes.")
 		numNodes = self.dependencyModel.rowCount()
 		for i in range(0, numNodes):
 			item = self.dependencyModel.item(i)
@@ -618,15 +636,13 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 				#rename shader
 				logger.debug(originalNodeName + " => " + newNodeName)
 				mc.rename(originalNodeName, newNodeName)
-			else:
-				newNodeName = originalNodeName
-
-
-
 
 		#done
 		mc.warning("rename shaders succesful.")
-		self.close()
+
+		#close or refresh?
+		#self.close()
+		self.refresh()
 
 
 class ShaderItem(QtGui.QStandardItem):
@@ -638,6 +654,12 @@ class ShaderItem(QtGui.QStandardItem):
 
 		self.clean = False
 		self.oldName = shaderName
+		self.nodeType = mc.nodeType(self.oldName)
+		self.setToolTip(self.nodeType)
+
+		self.assetString = None
+		self.nodeString = None
+		self.variationString = None
 
 		self.DEFAULT_ICON = QtGui.QIcon(os.getenv("MAYA_LOCATION")+"/icons/fpe_okPaths.png")
 		self.WARNING_ICON = QtGui.QIcon(os.getenv("MAYA_LOCATION")+"/icons/fpe_someBrokenPaths.png")
@@ -659,6 +681,13 @@ class ShaderItem(QtGui.QStandardItem):
 			self.clean = False
 
 
+	def nameClash(self):
+		#name clash
+		print "name clash!!"
+		self.clean = False
+		print self.clean
+		self.setIcon(self.WARNING_ICON)
+
 	def setTextColor(self, color="default"):
 		#set text color
 		if color == "default":
@@ -678,9 +707,9 @@ class ShaderItem(QtGui.QStandardItem):
 		#self.setData(QtGui.QColor("#FF333D"),QtCore.Qt.TextColorRole)
 		#self.setData(QtGui.QColor("#FF333D"),QtCore.Qt.BackgroundColorRole)
 
-class DependencyItem(QtGui.QStandardItem):
+class DependencieItem(QtGui.QStandardItem):
 	def __init__(self, nodeName):
-		super(DependencyItem, self).__init__()
+		super(DependencieItem, self).__init__()
 		
 		self.setText(nodeName)
 		#self.setEditable(False)
@@ -688,6 +717,11 @@ class DependencyItem(QtGui.QStandardItem):
 		self.clean = False
 		self.oldName = nodeName
 		self.nodeType = mc.nodeType(self.oldName)
+		self.setToolTip(self.nodeType)
+
+		self.assetString = None
+		self.nodeString = None
+		self.variationString = None
 
 		self.DEFAULT_ICON = QtGui.QIcon(os.getenv("MAYA_LOCATION")+"/icons/fpe_okPaths.png")
 		self.WARNING_ICON = QtGui.QIcon(os.getenv("MAYA_LOCATION")+"/icons/fpe_someBrokenPaths.png")
@@ -704,14 +738,14 @@ class DependencyItem(QtGui.QStandardItem):
 			print "good node name"
 			self.setIcon(self.DEFAULT_ICON)
 			self.clean = True
-
+			#self.setTextColor("valid")
 		else:
 			print "bad node name"
 			self.setIcon(self.WARNING_ICON)
 			self.clean = False
 
 	def setBackgroundColor(self):
-		#TODO: define the colors some where else
+		#TODO: define the colors some where
 		#set background color :)
 		if self.nodeType in mayaNodesDict["shader"]:
 			color = "#383838"
@@ -737,8 +771,6 @@ class ShadersItemModel(QtGui.QStandardItemModel):
 		super(ShadersItemModel, self).__init__()
 		print "shader view model created."
 
-
-
 class DependenciesItemModel(QtGui.QStandardItemModel):
 	def __init__(self):
 		super(DependenciesItemModel, self).__init__()
@@ -746,9 +778,8 @@ class DependenciesItemModel(QtGui.QStandardItemModel):
 
 
 
-
 def validShaderName(assetName, variationName, shaderName):
-
+	#TODO: pass node type into reg7.
     print "checking shader name: "+ shaderName
 
     re1='('+assetName+')'   # Word 1
@@ -769,13 +800,13 @@ def validShaderName(assetName, variationName, shaderName):
     re4='(_)'   # Any Single Character 2
     re5='('+variationName+')' # Word 2
     re6='(_)'   # Any Single Character 3
-    re7='.*?'	# Word 3
     #re7='((?:[a-z][a-z]+))'	# Word 3
+    re7='.*?'	# Word 3
     re8='($)'
 
     rg2 = re.compile(re1+re2+re3+re4+re5+re6+re7+re8,re.IGNORECASE|re.DOTALL)
     m2 = rg2.search(shaderName)
-    
+
     print m1, m2
 
     if m1 or m2:
@@ -786,10 +817,12 @@ def validShaderName(assetName, variationName, shaderName):
         c3=m2.group(5)
         word3=m2.group(6)
         return True
-        
     else:
         print "invalid shader name!! :  " + shaderName
         return False
+
+
+
 
 def main(debug=False):
 	#launch shader renamer

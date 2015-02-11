@@ -1,56 +1,59 @@
-import maya.cmds as mc
 
+import maya.cmds as mc
+#ignoreNodes = ['defaultColorMgtGlobals']
 
 def getUpstreamNodes(root):
-    #pass in a node. returns all upstream nodes.
-    
-    MAX_SEARCH_LEVEL = 50
+	#pass in a node. returns all upstream nodes.
 
-    allNodes = []
-    #start with the root
-    conectedNodes=[]
+	MAX_SEARCH_LEVEL = 50
 
-    nextLevel = [root]
+	allNodes = []
+	#start with the root
+	conectedNodes=[]
 
-    #I am afraied of while loops... so lets set a max for now and break when done.
-    for l in range(0, MAX_SEARCH_LEVEL):
-        print "searching level: " + str(l)
-        
-        if len(nextLevel) == 0:
-            print "no more nodes to search."
-            break
-        
-        for i in nextLevel:
+	nextLevel = [root]
+	print "root shader for searching connections: ", root
 
-            nextLevel.remove(i)
-            print "getting connections for: " + i
+	#I am afraied of while loops... so lets set a max for now and break when done.
+	for l in range(0, MAX_SEARCH_LEVEL):
+		print "searching level: " + str(l)
+		print "next level nodes: ", nextLevel
 
-            conectedNodes = mc.listConnections(i, sh=True, s=True, d=False)
-            #print conectedNodes
+		if len(nextLevel) == 0:
+			print "no more nodes to search."
+			break
+		
+		for i in nextLevel:
+			print "getting connections for: " + i
 
-            try:
-                conectedNodes = list(set(conectedNodes))
-                print i + " : ", conectedNodes
-                nextLevel += conectedNodes
-    
-            except:
-                print "nothing connected to : " + i
-                continue
+			try:
+				nextLevel.remove(i)
+			except ValueError:
+				pass
+			print "next level nodes: ", nextLevel
 
-            allNodes += conectedNodes
-            
-            nextLevel = list(set(nextLevel))
-    
-        print "searching next level for connections: ", nextLevel, "\n"
-        #
-        conectedNodes=[]
-    
-    print allNodes
-    return allNodes
+			conectedNodes = mc.listConnections(i, sh=True, s=True, d=False)
+			#print conectedNodes
+
+			try:
+				conectedNodes = list(set(conectedNodes))
+				print i + " : ", conectedNodes
+				nextLevel += conectedNodes
+	
+			except:
+				print "nothing connected to : " + i
+				continue
+                        
+			allNodes += conectedNodes
+			
+			nextLevel = list(set(nextLevel))
+
+		print "searching next level for connections: ", nextLevel, "\n"
+		#
+		conectedNodes=[]
+	
+	print allNodes
+	return allNodes
 
 
-# allNodes = getUpstreamNodes("plastic_01")
-# mc.select(clear=True)
-# for i in allNodes:
-#     print i
-#     mc.select(i, add=True)
+#allNodes = getUpstreamNodes("UHAUL_metal_A_shad")
