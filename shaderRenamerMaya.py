@@ -11,6 +11,8 @@ TODO:
 current default mode is lookdev. which assumes current scene only have one asset.
 adding in lighting mode which just do general naming convention checking and operates
 naming and asset string checking on only selected
+
+fix getting displacement connections
 '''
 import sys
 import os
@@ -163,6 +165,7 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#refresh the shaders list and the dependencies list
 		logger.info("refreshing shaders and dependencies list.")
 		self.shaderModel.clear()
+		self.dependencyModel.clear()
 		self.shadersToLoad, self.geoConnections, self.shaderDependencies = self.getAllShaders()
 
 		row = 0
@@ -229,16 +232,21 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 
 					#get surface shader
 					if connectedShader:
-						print sg, connectedShader
 						connectedShader = connectedShader.split(".")[0]
 						allDependencies[connectedShader] = utils.getUpstreamNodes(connectedShader)
+						allMeshConnections[connectedShader] = mc.listConnections(sg, s=True, sh=True, type="mesh")
 						allShaders[connectedShader] = sg
+
+						if connectedShader == "":
+							logger.warning("no surface shader connected to : " + sg)
+							continue
 
 					#get displacement shader
 					connectedDisp = mc.connectionInfo(sg+".displacementShader", sfd=True)
 					if connectedDisp:
 						connectedDisp = connectedDisp.split(".")[0]
 						allDependencies[connectedDisp] = utils.getUpstreamNodes(connectedDisp)
+						allMeshConnections[connectedDisp] = mc.listConnections(sg, s=True, sh=True, type="mesh")
 						allShaders[connectedDisp] = sg
 
 					#get volume shader
@@ -246,16 +254,13 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 					if connectedVolum:
 						connectedVolum = connectedVolum.split(".")[0]
 						allDependencies[connectedVolum] = utils.getUpstreamNodes(connectedVolum)
+						allMeshConnections[connectedVolum] = mc.listConnections(sg, s=True, sh=True, type="mesh")
 						allShaders[connectedVolum] = sg
 
-					if connectedShader == "":
-						logger.warning("no surface shader connected to : " + sg)
-						continue
-					print allShaders
 					#print "connectedShader: ", connectedShader
 					logger.debug("getting shaders geo connection and dependencies.")
 					allMeshConnections[connectedShader] = mc.listConnections(sg, s=True, sh=True, type="mesh")
-					#allDependencies[connectedShader] = utils.getUpstreamNodes(connectedShader)
+
 
 		print allShaders, allMeshConnections, allDependencies
 		return allShaders, allMeshConnections, allDependencies
@@ -735,7 +740,11 @@ class ShadingNodeItem(QtGui.QStandardItem):
 	def setBackgroundColor(self):
 		#TODO: define the colors some where
 		#set background color :)
-		if self.nodeType in mayaNodesDict["shader"]:
+		if self.nodeType in mayaNodesDict["displacement"]:
+			color = "#726704"
+		elif self.nodeType in mayaNodesDict["volume"]:
+			color = "#0f876c"
+		elif self.nodeType in mayaNodesDict["shader"]:
 			color = "#383838"
 		elif self.nodeType in mayaNodesDict["texture2D"]:
 			#give file nodes it's own color
