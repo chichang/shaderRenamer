@@ -34,6 +34,69 @@ reload(utils)
 # logger = logging.getLogger('shaderRenamer')
 # logger.setLevel(logging.DEBUG)
 
+
+
+
+subfixDict = dict()
+subfixDict["place2dTexture"] = "place2d"
+subfixDict["blendColors"] = "blend"
+subfixDict["remapHsv"] = "remap"
+'''
+bump2d
+bump3d
+choice
+chooser
+clamp
+condition
+contrast
+curveInfo
+decomposeMatrix
+distanceBetween
+doubleShadingSwitch
+eulerToQuat
+frameCache
+gammaCorrect
+heightField
+hsvToRgb
+inverseMatrix
+lightInfo
+luminance
+multDoubleLinear
+multMatrix
+multiplyDivide
+particleSamplerInfo
+plusMinusAverage
+projection
+quadShadingSwitch
+quatAdd
+quatConjugate
+quatInvert
+quatNegate
+quatNormalize
+quatProd
+quatSub
+quatToEuler
+remapColor
+remapHsv
+remapValue
+reverse
+rgbToHsv
+samplerInfo
+setRange
+singleShadingSwitch
+stencil
+surfaceInfo
+surfaceLuminance
+transposeMatrix
+tripleShadingSwitch
+unitConversion
+uvChooser
+vectorProduct
+wtAddMatrix
+xThinFilmInterference
+'''
+
+
 logger = logger.getLogger()
 
 
@@ -777,8 +840,15 @@ class DependencieItem(ShadingNodeItem):
 		ShadingNodeItem.__init__(self, nodeName)
 
 		self.nodeType = mc.nodeType(self.oldName)
-		self.subfixString = self.nodeType
+
+		#use short name
+		if self.nodeType in subfixDict:
+			self.subfixString = subfixDict[self.nodeType]
+		else:
+			self.subfixString = self.nodeType
 		self.setBackgroundColor()
+
+
 
 
 
@@ -814,6 +884,7 @@ def main(debug=False):
 	win = ShaderRenamerWindow()
 	win.show()
 	return
+
 
 if __name__ == "__main__":
 	pass
