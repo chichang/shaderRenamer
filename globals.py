@@ -14,3 +14,67 @@ mayaNodesDict["volume"] = mc.listNodeTypes("shader/volume")
 mayaNodesDict["placeTexture"] = ["place2dTexture", "place3dTexture"]
 mayaNodesDict["utility"].remove("place2dTexture")
 mayaNodesDict["utility"].remove("place3dTexture")
+
+
+
+subfixDict = dict()
+subfixDict["place2dTexture"] = "place2d"
+subfixDict["blendColors"] = "blend"
+subfixDict["remapHsv"] = "remap"
+
+
+
+'''
+bump2d
+bump3d
+choice
+chooser
+clamp
+condition
+contrast
+curveInfo
+decomposeMatrix
+distanceBetween
+doubleShadingSwitch
+eulerToQuat
+frameCache
+gammaCorrect
+heightField
+hsvToRgb
+inverseMatrix
+lightInfo
+luminance
+multDoubleLinear
+multMatrix
+multiplyDivide
+particleSamplerInfo
+plusMinusAverage
+projection
+quadShadingSwitch
+quatAdd
+quatConjugate
+quatInvert
+quatNegate
+quatNormalize
+quatProd
+quatSub
+quatToEuler
+remapColor
+remapHsv
+remapValue
+reverse
+rgbToHsv
+samplerInfo
+setRange
+singleShadingSwitch
+stencil
+surfaceInfo
+surfaceLuminance
+transposeMatrix
+tripleShadingSwitch
+unitConversion
+uvChooser
+vectorProduct
+wtAddMatrix
+xThinFilmInterference
+'''

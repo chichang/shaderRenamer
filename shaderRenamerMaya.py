@@ -34,69 +34,6 @@ reload(utils)
 # logger = logging.getLogger('shaderRenamer')
 # logger.setLevel(logging.DEBUG)
 
-
-
-
-subfixDict = dict()
-subfixDict["place2dTexture"] = "place2d"
-subfixDict["blendColors"] = "blend"
-subfixDict["remapHsv"] = "remap"
-'''
-bump2d
-bump3d
-choice
-chooser
-clamp
-condition
-contrast
-curveInfo
-decomposeMatrix
-distanceBetween
-doubleShadingSwitch
-eulerToQuat
-frameCache
-gammaCorrect
-heightField
-hsvToRgb
-inverseMatrix
-lightInfo
-luminance
-multDoubleLinear
-multMatrix
-multiplyDivide
-particleSamplerInfo
-plusMinusAverage
-projection
-quadShadingSwitch
-quatAdd
-quatConjugate
-quatInvert
-quatNegate
-quatNormalize
-quatProd
-quatSub
-quatToEuler
-remapColor
-remapHsv
-remapValue
-reverse
-rgbToHsv
-samplerInfo
-setRange
-singleShadingSwitch
-stencil
-surfaceInfo
-surfaceLuminance
-transposeMatrix
-tripleShadingSwitch
-unitConversion
-uvChooser
-vectorProduct
-wtAddMatrix
-xThinFilmInterference
-'''
-
-
 logger = logger.getLogger()
 
 
@@ -125,8 +62,8 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.setWindowTitle("Shader Renamer")
 		logger.info("setting up ui...")
 
-		DEFAULT_ASSET_STRING = "asset"
-		DEFAULT_VARIATION_STRING = "A"
+		self.DEFAULT_ASSET_STRING = "asset"
+		self.DEFAULT_VARIATION_STRING = "A"
 		self.INFO_CLEAN = ""
 		#self.INFO_DIRTY = "Please rename shader: (ASSET)_(shader)_(variation)_shad"
 		self.INFO_DIRTY = "shader Name invalid. please rename."
@@ -136,7 +73,9 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.ASSET = ""
 		self.VARIATION = ""
 		self.VARIATION_STR_INDEX = -2
-		DEFAULT_VARIATION_STRING = "A"
+
+		self.ASSET_NAME_ATTR = "assetShaderName"
+		self.ASSET_VAR_ATTR = "assetShaderVar"
 
 		#set models
 		self.shaderModel = ShadersItemModel()
@@ -153,14 +92,17 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		self.dependenciesListView.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
 		#self.shadersListView.setStyleSheet("background-color: qlineargradient(x1: 0.5, y1: 0.5 x2: 0.5, y2: 1, stop: 0 #25262d, stop: 0.7 #242424 );")
 
-
+		self.rcnull = None
 		#find asset if not use shot name
 		rcnulls = self.getAssetInScene()
 		if rcnulls:
-			if len(rcnulls) != 0:
+			#assume we only have one asset in the scene for now
+			self.rcnull = rcnulls[0]
+			if len(rcnulls) != 1:
 				logger.warning("found more than one asset in the scene. use the first one.")
-				#assume we only have one asset in the scene for now
-				assetName = mc.getAttr(rcnulls[0]+".assetString")
+			#assetName = mc.getAttr(rcnulls[0]+".assetString")
+			assetName = self.getAssetName(self.rcnull)
+			variationName = self.getVariationName(self.rcnull)
 		else:
 			#use the shot name
 			try:
@@ -169,15 +111,15 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 					assetName = shot
 				else:
 					logger.warning("can not get shot. use default name")
-					assetName = DEFAULT_ASSET_STRING
+					assetName = self.DEFAULT_ASSET_STRING
 
 			except:
 				logger.error("error getting shot. use default name")
-				assetName = DEFAULT_ASSET_STRING
+				assetName = self.DEFAULT_ASSET_STRING
+		
 
+			variationName = self.DEFAULT_VARIATION_STRING
 
-		#fill this in when adding variation support
-		variationName = DEFAULT_VARIATION_STRING
 
 		#set initial values
 		logger.info("assigning initial values.")
@@ -260,6 +202,27 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 			self.dependencyModel.sort(QtCore.Qt.DisplayRole)
 			#model.clicked[row].connect(self.clicked)
 			row += 1
+
+	def getAssetName(self, node):
+		logger.debug("getting asset name")
+		#find attr if exsist
+		try:
+			return mc.getAttr(node+"."+self.ASSET_NAME_ATTR)
+		#use asset string if not
+		except:
+			return mc.getAttr(node+".assetString")
+		return None
+
+	def getVariationName(self, node):
+		logger.debug("getting variation name")
+		#find attr if exsist
+		try:
+			return mc.getAttr(node+"."+self.ASSET_VAR_ATTR)
+		#use asset string if not
+		except:
+			return self.DEFAULT_VARIATION_STRING
+
+
 
 	def filterAllDependencies(self):
 		#return the dependency list for adding to list view.
@@ -703,6 +666,9 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#do the rename.
 
 		logger.info("renaming shaders.")
+		#set attr
+		self.setAttrString()
+
 		numShaders = self.shaderModel.rowCount()
 		for i in range(0, numShaders):
 			item = self.shaderModel.item(i)
@@ -738,6 +704,20 @@ class ShaderRenamerWindow(QtGui.QMainWindow, Ui_shaderRenamerGUI):
 		#close or refresh?
 		#self.close()
 		self.refresh()
+
+	def setAttrString(self):
+		#create and set attr on rcnull
+		if self.rcnull:
+			if self.ASSET_NAME_ATTR not in mc.listAttr(self.rcnull):
+				logger.debug("adding attribute on node " + self.rcnull)
+				mc.addAttr(self.rcnull, ln=self.ASSET_NAME_ATTR, sn=self.ASSET_NAME_ATTR, dt="string")
+			if self.ASSET_VAR_ATTR not in mc.listAttr(self.rcnull):
+				logger.debug("adding attribute on node " + self.rcnull)
+				mc.addAttr(self.rcnull, ln=self.ASSET_VAR_ATTR, sn=self.ASSET_VAR_ATTR, dt="string")
+			#setting attributes
+			logger.debug("adding attribute on node " + self.rcnull)
+			mc.setAttr(self.rcnull+"."+self.ASSET_NAME_ATTR, self.assetLineEdit.text(), type="string")
+			mc.setAttr(self.rcnull+"."+self.ASSET_VAR_ATTR, self.variationLineEdit.text(), type="string")
 
 
 	def renameShadingGroup(self, oldName, newName):
@@ -847,20 +827,6 @@ class DependencieItem(ShadingNodeItem):
 		else:
 			self.subfixString = self.nodeType
 		self.setBackgroundColor()
-
-
-
-
-
-
-class ParentItem(QtGui.QStandardItem):
-	#mother class for all standard items
-	def __init__(self, name):
-		super(ShadingNodeItem, self).__init__()
-		self.setText(name)
-		#self.setEditable(False)
-
-
 
 
 class ShadersItemModel(QtGui.QStandardItemModel):

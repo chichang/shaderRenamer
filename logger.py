@@ -3,7 +3,7 @@
 import logging
 
 LOGGER_INITIALIZED = False
-LOGGER_LEVEL = logging.DEBUG
+LOGGER_LEVEL = logging.INFO
 
 packageName = 'shaderRenamer'
 
